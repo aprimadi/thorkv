@@ -1,0 +1,11 @@
+[package]
+name = "thorkv"
+description = "ThorKV is an in-memory key-value database"
+version = "0.0.1"
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+byteorder = "1.4"
+skiplist = "0.4"
+tokio = { version = "1", features = ["full"] }
