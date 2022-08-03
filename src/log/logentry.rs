@@ -5,7 +5,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use crate::log::serde;
 use crate::log::serde::Serialize;
-use crate::types::Xid;
+use crate::types::{CheckpointPhase, Xid};
 
 enum LogEntryType {
     XBEGIN = 1,
@@ -123,13 +123,4 @@ impl Serialize for LogEntry {
 pub enum LogicalOperation {
     Set { key: String, value: String },
     Delete { key: String },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum CheckpointPhase {
-    REST = 1,
-    PREPARE,
-    RESOLVE,
-    CAPTURE,
-    COMPLETE,
 }

@@ -1,17 +1,9 @@
-pub struct StorageError {
-    message: String,
-}
+use crate::Error;
+
+mod naivehash;
 
 pub trait KeyValueStorage {
-    fn get<K>(key: K) -> Result<Option<Vec<u8>>, StorageError>
-    where K: AsRef<[u8]>;
-        
-    fn put<K, V>(key: K, value: V) -> Result<(), StorageError>
-    where 
-        K: AsRef<[u8]>,
-        V: AsRef<[u8]>;
-        
-    fn delete<K>(key: K) -> Result<(), StorageError>
-    where
-        K: AsRef<[u8]>;
+    fn get(&mut self, key: &[u8]) -> Result<Option<Vec<u8>>, Error>;
+    fn put(&mut self, key: &[u8], value: &[u8]) -> Result<(), Error>;
+    fn delete(&mut self, key: &[u8]) -> Result<(), Error>;
 }

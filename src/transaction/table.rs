@@ -1,9 +1,11 @@
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use skiplist::OrderedSkipList;
 
-use crate::types::Xid;
+use crate::types::{CheckpointPhase, Xid};
+
+pub type TransactionTableRef = Arc<TransactionTable>;
 
 /// Keeps track of currently active transactions.
 ///
@@ -13,6 +15,8 @@ use crate::types::Xid;
 pub struct TransactionTable {
     // Next xid
     next_xid: AtomicU64,
+    phase: CheckpointPhase,
+    // TODO: Maybe RwLock is better?????
     active_xids: Mutex<OrderedSkipList<Xid>>,
 }
 
@@ -21,6 +25,7 @@ impl TransactionTable {
     pub fn new() -> Self {
         Self { 
             next_xid: AtomicU64::new(1),
+            phase: CheckpointPhase::REST,
             active_xids: Mutex::new(OrderedSkipList::new()),
         }
     }
@@ -39,14 +44,21 @@ impl TransactionTable {
         active_xids.remove(xid);
     }
     
-    pub fn last_xid(&self) -> Xid {
+    pub fn next_xid(&self) -> Xid {
         let next_xid = self.next_xid.load(Ordering::Relaxed);
-        next_xid - 1
+        next_xid
     }
     
     /// Returns the oldest transaction id that is still active.
     pub fn oldest_xid(&self) -> Option<u64> {
         let active_xids = self.active_xids.lock().unwrap();
         active_xids.front().map(|x| x.clone())
+    }
+    
+    /// Move to the next checkpointing phase, return the first xid of the next
+    /// phase
+    pub fn move_to_next_phase(&self) -> u64 {
+        // TODO
+        1
     }
 }

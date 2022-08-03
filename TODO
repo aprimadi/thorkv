@@ -1,0 +1,9 @@
+[ ] Finish log implementation
+[ ] Implement naive hash storage
+[ ] Finish checkpoint implementation
+[ ] Implement DB
+[ ] Add recovery implementation
+
+Backlog
+[ ] Implement Cuckoo hash storage
+[ ] Benchmark throughput for random write/read, sequential write/read
