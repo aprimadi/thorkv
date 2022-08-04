@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use skiplist::OrderedSkipList;
 
-use crate::types::{CheckpointPhase, Xid};
+use crate::types::Xid;
 
 pub type TransactionTableRef = Arc<TransactionTable>;
 
@@ -15,7 +15,6 @@ pub type TransactionTableRef = Arc<TransactionTable>;
 pub struct TransactionTable {
     // Next xid
     next_xid: AtomicU64,
-    phase: CheckpointPhase,
     // TODO: Maybe RwLock is better?????
     active_xids: Mutex<OrderedSkipList<Xid>>,
 }
@@ -25,7 +24,6 @@ impl TransactionTable {
     pub fn new() -> Self {
         Self { 
             next_xid: AtomicU64::new(1),
-            phase: CheckpointPhase::REST,
             active_xids: Mutex::new(OrderedSkipList::new()),
         }
     }
@@ -53,12 +51,5 @@ impl TransactionTable {
     pub fn oldest_xid(&self) -> Option<u64> {
         let active_xids = self.active_xids.lock().unwrap();
         active_xids.front().map(|x| x.clone())
-    }
-    
-    /// Move to the next checkpointing phase, return the first xid of the next
-    /// phase
-    pub fn move_to_next_phase(&self) -> u64 {
-        // TODO
-        1
     }
 }
