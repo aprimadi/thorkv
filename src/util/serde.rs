@@ -12,7 +12,7 @@ pub trait Deserialize {
     fn deserialize(&mut self, rdr: &mut Cursor<Vec<u8>>);
 }
 
-pub fn serialize_u8_vec(res: &mut Vec<u8>, data: &Vec<u8>) {
+pub fn serialize_u8_vec(res: &mut Vec<u8>, data: &[u8]) {
     let content_size = data.len();
     serialize_usize(res, content_size);
     for d in data {

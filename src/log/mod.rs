@@ -5,7 +5,6 @@ use crate::log::logentry::LogEntry;
 
 mod io;
 mod logentry;
-mod serde;
 
 const BATCH_SIZE: u32 = 32;
 

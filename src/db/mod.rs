@@ -7,13 +7,15 @@
 /// We also keep track of a map from a "key" to whether there is a stable 
 /// version for that key.
 
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use lockfree::set::Set;
 
 use crate::checkpoint::{Checkpointer, start_checkpointer};
+use crate::checkpoint::io::CheckpointWriter;
 use crate::storage::KeyValueStorage;
-use crate::storage::lfcuckoo::LFCuckooStorage;
+use crate::storage::lfmap::LFMapStorage;
 use crate::transaction::table::{TransactionTable, TransactionTableRef};
 use crate::types::{CheckpointPhase, Error, Xid};
 
@@ -24,6 +26,7 @@ pub struct DB {
     phase: RwLock<CheckpointPhase>,
     live_storage: Arc<dyn KeyValueStorage + Send + Sync>,
     stable_storage: Arc<dyn KeyValueStorage + Send + Sync>,
+    stable_keys: Set<Vec<u8>>,
     // We need a graveyard to keep the set of keys that has been deleted
     // on the live version but still alive on the stable version.
     graveyard: Set<Vec<u8>>,
@@ -39,8 +42,9 @@ impl DB {
             Self {
                 xtable: xtable.clone(),
                 phase: RwLock::new(CheckpointPhase::REST),
-                live_storage: Arc::new(LFCuckooStorage::new()),
-                stable_storage: Arc::new(LFCuckooStorage::new()),
+                live_storage: Arc::new(LFMapStorage::new()),
+                stable_storage: Arc::new(LFMapStorage::new()),
+                stable_keys: Set::new(),
                 graveyard: Set::new(),
             }
         );
@@ -55,7 +59,8 @@ impl DB {
     pub fn get<K>(&self, key: K) -> Result<Option<Vec<u8>>, Error>
     where K: AsRef<[u8]>
     {
-        self.live_storage.get(key.as_ref())
+        let v = self.live_storage.get(key.as_ref());
+        Ok(v)
     }
         
     pub fn put<K, V>(&self, key: K, value: V) -> Result<(), Error>
@@ -88,13 +93,31 @@ impl DB {
         *phase
     }
     
+    // This should iterate over all key values and save it to disk.
+    // Setting the stable_status and cleaning up stable record along the
+    // way.
     pub fn save_checkpoint(&self) {
-        // TODO: This should iterate over all key values and save it to disk
-        // Setting the stable_status and cleaning up stable record along the
-        // way.
+        let mut writer = CheckpointWriter::new();
+        let keys = self.live_storage.keys();
+        for key in keys {
+            let value;
+            if self.stable_keys.contains(&key) {
+                value = self.stable_storage.get(&key);
+            } else {
+                value = self.live_storage.get(&key);
+            }
+            if value.is_some() {
+                let value = value.unwrap();
+                writer.append(&key, &value);
+            }
+            
+            // TODO: Clean stable_status and stable_record
+        }
+        writer.flush();
     }
     
     pub fn post_checkpoint(&self) {
         // TODO: This should clean up stable_status bit
+        //self.stable_keys = Set::new();
     }
 }

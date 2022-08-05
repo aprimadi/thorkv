@@ -2,8 +2,8 @@ use std::fs::{File, OpenOptions};
 use std::io::{Cursor, Read, Write};
 
 use crate::log::logentry::LogEntry;
-use crate::log::serde;
-use crate::log::serde::Serialize;
+use crate::util::serde;
+use crate::util::serde::Serialize;
 
 // TODO: 
 // [ ] Batched log writer

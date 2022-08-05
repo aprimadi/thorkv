@@ -1,5 +1,6 @@
 [x] Finish log implementation
-[ ] Implement lock-free map storage
+[x] Implement lock-free map storage
+[ ] Implement stable storage
 [ ] Finish checkpoint implementation
 [ ] Implement DB
 [ ] Add recovery implementation

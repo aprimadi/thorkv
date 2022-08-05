@@ -3,9 +3,9 @@ use std::io::Cursor;
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
-use crate::log::serde;
-use crate::log::serde::Serialize;
 use crate::types::{CheckpointPhase, Xid};
+use crate::util::serde;
+use crate::util::serde::Serialize;
 
 enum LogEntryType {
     XBEGIN = 1,

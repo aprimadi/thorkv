@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::Duration;
 use std::thread;
 
@@ -6,6 +6,8 @@ use crate::constants::CHECKPOINT_INTERVAL_SECS;
 use crate::db::DBRef;
 use crate::transaction::table::TransactionTableRef;
 use crate::types::{CheckpointPhase, Xid};
+
+pub mod io;
 
 const BUSY_WAIT_INTERVAL_MILLIS: u64 = 1;
 
