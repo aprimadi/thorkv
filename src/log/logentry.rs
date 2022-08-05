@@ -36,7 +36,12 @@ pub enum LogEntry {
     XBegin { xid: Xid },
     XCommit { xid: Xid },
     XAbort { xid: Xid },
-    Update { xid: Xid, operation: LogicalOperation },
+    Update { 
+        xid: Xid, 
+        key: Vec<u8>, 
+        value: Option<Vec<u8>>, 
+        previous_value: Option<Vec<u8>>,
+    },
     CPhase(CheckpointPhase),
 }
 
@@ -46,45 +51,47 @@ impl LogEntry {
         let mut rdr = Cursor::new(bytes);
         let lr_type: u8;
         match rdr.read_u8() {
-            Ok(t) => {
-                lr_type = t;
-            }
-            _ => {
-                return None;
-            }
+            Ok(t) => lr_type = t,
+            _     => return None,
         }
         
         let lr_type: LogEntryType = lr_type.try_into().unwrap();
         let mut log = None;
         match lr_type {
             LogEntryType::XBEGIN    => {
-                log = Some(LogEntry::XBegin { xid: 1 });
+                let xid = serde::deserialize_xid(&mut rdr);
+                log = Some(LogEntry::XBegin { xid });
             }
             LogEntryType::XCOMMIT   => {
-                log = Some(LogEntry::XCommit { xid: 1 });
+                let xid = serde::deserialize_xid(&mut rdr);
+                log = Some(LogEntry::XCommit { xid });
             }
             LogEntryType::XABORT    => {
-                log = Some(LogEntry::XAbort { xid: 1 });
+                let xid = serde::deserialize_xid(&mut rdr);
+                log = Some(LogEntry::XAbort { xid });
             }
             LogEntryType::UPDATE    => {
-                log = Some(LogEntry::Update {
-                    xid: 1,
-                    operation: LogicalOperation::Set { 
-                        key: "foo".to_owned(), 
-                        value: "bar".to_owned() 
-                    },
-                });
+                let xid = serde::deserialize_xid(&mut rdr);
+                let key = serde::deserialize_u8_vec(&mut rdr);
+                let value;
+                if rdr.read_u8().unwrap() == 1 {
+                    value = Some(serde::deserialize_u8_vec(&mut rdr));
+                } else {
+                    value = None;
+                }
+                let previous_value;
+                if rdr.read_u8().unwrap() == 1 {
+                    previous_value = Some(serde::deserialize_u8_vec(&mut rdr));
+                } else {
+                    previous_value = None;
+                }
+                log = Some(LogEntry::Update { xid, key, value, previous_value });
             },
             LogEntryType::CPHASE    => {
-                log = Some(LogEntry::CPhase(CheckpointPhase::REST));
+                let phase_u8 = rdr.read_u8().unwrap();
+                let phase = CheckpointPhase::try_from(phase_u8).unwrap();
+                log = Some(LogEntry::CPhase(phase));
             }
-            /*
-            LogRecordType::Abort => {
-                let mut abort = AbortRecord::empty();
-                abort.deserialize(&mut rdr);
-                LogRecord::Abort(abort)
-            },
-            */
         }
         log
     }
@@ -106,9 +113,25 @@ impl Serialize for LogEntry {
                 res.write_u8(LogEntryType::XABORT as u8).unwrap();
                 serde::serialize_xid(&mut res, xid);
             },
-            Self::Update { xid, operation } => {
+            Self::Update { xid, key, value, previous_value } => {
                 res.write_u8(LogEntryType::UPDATE as u8).unwrap();
                 serde::serialize_xid(&mut res, xid);
+                serde::serialize_u8_vec(&mut res, key);
+                if value.is_some() {
+                    res.write_u8(1).unwrap();
+                    serde::serialize_u8_vec(&mut res, value.as_ref().unwrap());
+                } else {
+                    res.write_u8(0).unwrap();
+                }
+                if previous_value.is_some() {
+                    res.write_u8(1).unwrap();
+                    serde::serialize_u8_vec(
+                        &mut res, 
+                        previous_value.as_ref().unwrap()
+                    );
+                } else {
+                    res.write_u8(0).unwrap();
+                }
             }
             Self::CPhase(phase) => {
                 res.write_u8(LogEntryType::CPHASE as u8).unwrap();

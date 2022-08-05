@@ -33,6 +33,8 @@ impl LogManager {
     }
     
     pub fn append_log(&mut self, log: LogEntry) {
-        self.log_queue.push_back(log);
+        self.writer.write(&log).unwrap();
+        self.writer.flush();
+        //self.log_queue.push_back(log);
     }
 }

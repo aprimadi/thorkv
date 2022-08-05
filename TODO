@@ -1,9 +1,11 @@
-[ ] Finish log implementation
-[ ] Implement naive hash storage
+[x] Finish log implementation
+[ ] Implement lock-free map storage
 [ ] Finish checkpoint implementation
 [ ] Implement DB
 [ ] Add recovery implementation
 
 Backlog
+[ ] Log implementation that uses Raft to sync to multiple server and sync log
+    entry to disk asynchronously
 [ ] Implement Cuckoo hash storage
 [ ] Benchmark throughput for random write/read, sequential write/read

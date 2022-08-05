@@ -20,7 +20,7 @@ pub fn serialize_u8_vec(res: &mut Vec<u8>, data: &Vec<u8>) {
     }
 }
 
-pub fn deserialize_u8_vec(rdr: &mut Cursor<Vec<u8>>) -> Vec<u8> {
+pub fn deserialize_u8_vec(rdr: &mut Cursor<&[u8]>) -> Vec<u8> {
     let mut res = Vec::new();
     let size = deserialize_usize(rdr);
     for _ in 0..size {
@@ -43,7 +43,7 @@ pub fn serialize_usize(res: &mut Vec<u8>, size: usize) {
     }
 }
 
-pub fn deserialize_usize(rdr: &mut Cursor<Vec<u8>>) -> usize {
+pub fn deserialize_usize(rdr: &mut Cursor<&[u8]>) -> usize {
     if cfg!(target_pointer_width = "64") {
         let size = rdr.read_u64::<BigEndian>().unwrap();
         let size = size as usize;
@@ -60,12 +60,12 @@ pub fn deserialize_usize(rdr: &mut Cursor<Vec<u8>>) -> usize {
 }
 
 pub fn serialize_xid(res: &mut Vec<u8>, xid: &Xid) {
-    // TODO
+    res.write_u64::<BigEndian>(*xid).unwrap();
 }
 
-pub fn deserialize_xid(rdr: &mut Cursor<Vec<u8>>) -> Xid {
-    // TODO
-    1
+pub fn deserialize_xid(rdr: &mut Cursor<&[u8]>) -> Xid {
+    let xid = rdr.read_u64::<BigEndian>().unwrap();
+    xid
 }
 
 #[cfg(test)]
@@ -79,7 +79,7 @@ mod tests {
         let mut res = Vec::new();
         serialize_u8_vec(&mut res, &v);
         // Deserialize
-        let v_out = deserialize_u8_vec(&mut Cursor::new(res));
+        let v_out = deserialize_u8_vec(&mut Cursor::new(&res));
         assert_eq!(v_out, v);
     }
 }

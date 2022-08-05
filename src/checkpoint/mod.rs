@@ -9,8 +9,6 @@ use crate::types::{CheckpointPhase, Xid};
 
 const BUSY_WAIT_INTERVAL_MILLIS: u64 = 1;
 
-// TODO: Checkpointer and DB is tightly coupled, figure out a way to decouple 
-// it.
 pub struct Checkpointer {
     db: DBRef,
     xtable: TransactionTableRef,

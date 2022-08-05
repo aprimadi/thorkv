@@ -36,7 +36,7 @@ impl LogWriter {
         Self::with_path(String::from("wal.log"))
     }
     
-    fn with_path(log_filepath: String) -> Self {
+    pub fn with_path(log_filepath: String) -> Self {
         let file = OpenOptions::new() 
             .append(true)
             .create(true)
@@ -48,7 +48,7 @@ impl LogWriter {
         }
     }
     
-    fn write(&mut self, log: &LogEntry) -> std::io::Result<()> {
+    pub fn write(&mut self, log: &LogEntry) -> std::io::Result<()> {
         let mut res = Vec::new();
         let buf = log.serialize();
         serde::serialize_u8_vec(&mut res, &buf);
@@ -56,7 +56,7 @@ impl LogWriter {
         Ok(())
     }
     
-    fn flush(&self) {
+    pub fn flush(&self) {
         self.file.sync_data();
     }
 }
@@ -88,7 +88,7 @@ impl LogReader {
         let mut size_buf: [u8; USIZE_LEN] = [0; USIZE_LEN];
         self.file.read_exact(&mut size_buf);
         let size: usize = serde::deserialize_usize(
-            &mut Cursor::new(size_buf.to_vec())
+            &mut Cursor::new(&size_buf)
         );
         
         let mut struct_buf = vec![0u8; size];
@@ -120,16 +120,15 @@ mod tests {
         let logs = [
             LogEntry::Update {
                 xid: 1,
-                operation: LogicalOperation::Set { 
-                    key: "foo".to_owned(), 
-                    value: "bar".to_owned(),
-                }
+                key: "foo".as_bytes().to_vec(),
+                value: Some("bar".as_bytes().to_vec()),
+                previous_value: None,
             },
         ];
         
         {
             let mut writer = LogWriter::new();
-            writer.write(&logs[0]);
+            writer.write(&logs[0]).unwrap();
             writer.flush();
         }
         
